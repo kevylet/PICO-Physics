@@ -92,6 +92,14 @@ function _draw()
  cls()
  print(boxes[1].velocities.vy1)
  rect(boxes[1]["points"]["x1"], boxes[1]["points"]["y1"], boxes[1]["points"]["x3"],boxes[1]["points"]["y3"], 4)
+ --Brandon's Portion
+  for b in all(boxes) do
+  line( b["points"]["x1"], b["points"]["y1"],  b["points"]["x2"],b["points"]["y2"] )
+  line( b["points"]["x1"], b["points"]["y1"],  b["points"]["x3"],b["points"]["y3"] ) 
+  line( b["points"]["x2"], b["points"]["y2"],  b["points"]["x4"],b["points"]["y4"] ) 
+  line( b["points"]["x3"], b["points"]["y3"],  b["points"]["x4"],b["points"]["y4"] ) 
+ end
+ --End of Brandon's Portion
 end
 
 __gfx__

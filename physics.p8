@@ -1,41 +1,99 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-cls()
-
 boxes = {}
+gravity = .2 -- how quickly the box accelerates due to gravity
+terminal_v = 5 -- the maximum falling speed of a box (maybe change with size or mass?)
+
+--   p1----p2
+--    |    |
+--    |    |
+--   p3----p4
 
 function spawn_box(size, location, movable)
 	local new_box = {}
 	new_box["points"] = {}
 	new_box["points"]["x1"] = location[1] - (size[1] / 2)
+ new_box["points"]["y1"] = location[2] - (size[2] / 2)
 	new_box["points"]["x2"] = location[1] - (size[1] / 2)
+ new_box["points"]["y2"] = location[2] - (size[2] / 2)
 	new_box["points"]["x3"] = location[1] + (size[1] / 2)
+ new_box["points"]["y3"] = location[2] + (size[2] / 2)
 	new_box["points"]["x4"] = location[1] + (size[1] / 2)
-	new_box["points"]["y1"] = location[2] - (size[2] / 2)
-	new_box["points"]["y2"] = location[2] - (size[2] / 2)
-	new_box["points"]["y3"] = location[2] + (size[2] / 2)
-	new_box["points"]["y4"] = location[2] + (size[2] / 2)
+ new_box["points"]["y4"] = location[2] + (size[2] / 2)
 
 	new_box["velocities"] = {}
 	new_box["velocities"]["vx1"] = 0
+ new_box["velocities"]["vy1"] = 0
 	new_box["velocities"]["vx2"] = 0
+ new_box["velocities"]["vy2"] = 0
 	new_box["velocities"]["vx3"] = 0
+ new_box["velocities"]["vy3"] = 0
 	new_box["velocities"]["vx4"] = 0
-	new_box["velocities"]["vy1"] = 0
-	new_box["velocities"]["vy2"] = 0
-	new_box["velocities"]["vy3"] = 0
-	new_box["velocities"]["vy4"] = 0
+ new_box["velocities"]["vy4"] = 0
 
 	new_box["movable"] = movable
 
 	add(boxes, new_box)
 end
 
-spawn_box({13,12},{20,36}, true)
+function ease(v)
+ local increased = v
+ if v < terminal_v then
+  v += gravity
+  return v
+ else
+  v = terminal_v
+  return v
+ end
+end
 
-print(boxes[1]["points"]["x2"])
-rect(boxes[1]["points"]["x1"], boxes[1]["points"]["y1"], boxes[1]["points"]["x3"],boxes[1]["points"]["y3"], 4)
+function apply_gravity(b)
+ if b.points.y3 < 127 or b.points.y3 < 127 then -- if not on floor
+  b.velocities.vy1 = ease(b.velocities.vy1)
+  b.velocities.vy2 = ease(b.velocities.vy2)
+  b.velocities.vy3 = ease(b.velocities.vy3)
+  b.velocities.vy4 = ease(b.velocities.vy4)
+ else
+  b.velocities.vy1 = 0
+  b.velocities.vy2 = 0
+  b.velocities.vy3 = 0
+  b.velocities.vy4 = 0
+ end
+end
+
+function update_box(b)
+ b.points.x1 += b.velocities.vx1
+ b.points.y1 += b.velocities.vy1
+ b.points.x2 += b.velocities.vx2
+ b.points.y2 += b.velocities.vy2
+ b.points.x3 += b.velocities.vx3
+ b.points.y3 += b.velocities.vy3
+ b.points.x4 += b.velocities.vx4
+ b.points.y4 += b.velocities.vy4
+end
+
+function update_boxes(bxs)
+ for b in all(bxs) do
+  apply_gravity(b)
+  update_box(b)
+ end
+end
+
+function _init()
+ spawn_box({13,12},{20,36}, true)
+end
+
+function _update()
+ update_boxes(boxes)
+end
+
+function _draw()
+ cls()
+ print(boxes[1].velocities.vy1)
+ rect(boxes[1]["points"]["x1"], boxes[1]["points"]["y1"], boxes[1]["points"]["x3"],boxes[1]["points"]["y3"], 4)
+end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

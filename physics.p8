@@ -1,6 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- pico physics
+--
+
 boxes = {}
 gravity = .2 -- how quickly the box accelerates due to gravity
 terminal_v = 5 -- the maximum falling speed of a box (maybe change with size or mass?)
@@ -13,24 +16,29 @@ terminal_v = 5 -- the maximum falling speed of a box (maybe change with size or 
 function spawn_box(size, location, movable)
 	local new_box = {}
 	new_box["points"] = {}
-	new_box["points"]["x1"] = location[1] - (size[1] / 2)
- new_box["points"]["y1"] = location[2] - (size[2] / 2)
-	new_box["points"]["x2"] = location[1] - (size[1] / 2)
- new_box["points"]["y2"] = location[2] - (size[2] / 2)
-	new_box["points"]["x3"] = location[1] + (size[1] / 2)
- new_box["points"]["y3"] = location[2] + (size[2] / 2)
-	new_box["points"]["x4"] = location[1] + (size[1] / 2)
- new_box["points"]["y4"] = location[2] + (size[2] / 2)
+	
+    -- point 1
+    new_box["points"]["x1"] = location[1] - (size[1] / 2)
+    new_box["points"]["y1"] = location[2] - (size[2] / 2)
+	-- point 2
+    new_box["points"]["x2"] = location[1] + (size[1] / 2)
+    new_box["points"]["y2"] = location[2] - (size[2] / 2)
+	-- point 3
+    new_box["points"]["x3"] = location[1] - (size[1] / 2)
+    new_box["points"]["y3"] = location[2] + (size[2] / 2)
+	-- point 4
+    new_box["points"]["x4"] = location[1] + (size[1] / 2)
+    new_box["points"]["y4"] = location[2] + (size[2] / 2)
 
 	new_box["velocities"] = {}
 	new_box["velocities"]["vx1"] = 0
- new_box["velocities"]["vy1"] = 0
+    new_box["velocities"]["vy1"] = 0
 	new_box["velocities"]["vx2"] = 0
- new_box["velocities"]["vy2"] = 0
+    new_box["velocities"]["vy2"] = 0
 	new_box["velocities"]["vx3"] = 0
- new_box["velocities"]["vy3"] = 0
+    new_box["velocities"]["vy3"] = 0
 	new_box["velocities"]["vx4"] = 0
- new_box["velocities"]["vy4"] = 0
+    new_box["velocities"]["vy4"] = 0
 
 	new_box["movable"] = movable
 
@@ -38,68 +46,91 @@ function spawn_box(size, location, movable)
 end
 
 function ease(v)
- local increased = v
- if v < terminal_v then
-  v += gravity
-  return v
- else
-  v = terminal_v
-  return v
- end
+    local increased = v
+    if v < terminal_v then
+        v += gravity
+        return v
+    else
+        v = terminal_v
+        return v
+    end
 end
 
 function apply_gravity(b)
- if b.points.y3 < 127 or b.points.y3 < 127 then -- if not on floor
-  b.velocities.vy1 = ease(b.velocities.vy1)
-  b.velocities.vy2 = ease(b.velocities.vy2)
-  b.velocities.vy3 = ease(b.velocities.vy3)
-  b.velocities.vy4 = ease(b.velocities.vy4)
- else
-  b.velocities.vy1 = 0
-  b.velocities.vy2 = 0
-  b.velocities.vy3 = 0
-  b.velocities.vy4 = 0
- end
+    if b["movable"]==true then 
+        b.velocities.vy1 = ease(b.velocities.vy1)
+        b.velocities.vy2 = ease(b.velocities.vy2)
+        b.velocities.vy3 = ease(b.velocities.vy3)
+        b.velocities.vy4 = ease(b.velocities.vy4)
+    else
+        b.velocities.vy1 = 0
+        b.velocities.vy2 = 0
+        b.velocities.vy3 = 0
+        b.velocities.vy4 = 0
+    end
+end
+
+function collision(b1,b2)
+    if  b1["points"]["x1"] < b2["points"]["x2"] and 
+        b1["points"]["x2"] > b2["points"]["x1"] and
+        b1["points"]["y1"] < b2["points"]["y3"] and 
+        b1["points"]["y3"] > b2["points"]["y1"] then
+            return 1
+    end
+    return 0
 end
 
 function update_box(b)
- b.points.x1 += b.velocities.vx1
- b.points.y1 += b.velocities.vy1
- b.points.x2 += b.velocities.vx2
- b.points.y2 += b.velocities.vy2
- b.points.x3 += b.velocities.vx3
- b.points.y3 += b.velocities.vy3
- b.points.x4 += b.velocities.vx4
- b.points.y4 += b.velocities.vy4
+    b.points.x1 += b.velocities.vx1
+    b.points.y1 += b.velocities.vy1
+    b.points.x2 += b.velocities.vx2
+    b.points.y2 += b.velocities.vy2
+    b.points.x3 += b.velocities.vx3
+    b.points.y3 += b.velocities.vy3
+    b.points.x4 += b.velocities.vx4
+    b.points.y4 += b.velocities.vy4
 end
 
 function update_boxes(bxs)
- for b in all(bxs) do
-  apply_gravity(b)
-  update_box(b)
- end
+    for b1 in all(bxs) do    
+        local flag = 0
+        for b2 in all(bxs) do
+            flag+=collision(b1,b2)
+        end
+        if flag <= 1 then
+            apply_gravity(b1)
+            update_box(b1)
+        end
+    end
 end
 
 function _init()
- spawn_box({13,12},{20,36}, true)
+    spawn_box({12,12},{50,16}, true)
+    spawn_box({12,12},{70,20}, true)
+    spawn_box({12,12},{20,20}, true)
+    spawn_box({127,10},{64,122}, false)
 end
 
 function _update()
- update_boxes(boxes)
+    update_boxes(boxes)
 end
 
 function _draw()
- cls()
- print(boxes[1].velocities.vy1)
- rect(boxes[1]["points"]["x1"], boxes[1]["points"]["y1"], boxes[1]["points"]["x3"],boxes[1]["points"]["y3"], 4)
- --Brandon's Portion
-  for b in all(boxes) do
-  line( b["points"]["x1"], b["points"]["y1"],  b["points"]["x2"],b["points"]["y2"] )
-  line( b["points"]["x1"], b["points"]["y1"],  b["points"]["x3"],b["points"]["y3"] ) 
-  line( b["points"]["x2"], b["points"]["y2"],  b["points"]["x4"],b["points"]["y4"] ) 
-  line( b["points"]["x3"], b["points"]["y3"],  b["points"]["x4"],b["points"]["y4"] ) 
- end
- --End of Brandon's Portion
+    cls()
+    -- set color to red
+    color(8)
+    print(boxes[1].velocities.vy1)
+    print("ground",50,120)
+    
+    for b in all(boxes) do     
+        -- rect representation 
+        --rect( b["points"]["x1"], b["points"]["y1"],  b["points"]["x3"],b["points"]["y3"], 4)
+          
+        line( b["points"]["x1"], b["points"]["y1"], b["points"]["x2"], b["points"]["y2"])
+        line( b["points"]["x1"], b["points"]["y1"], b["points"]["x3"], b["points"]["y3"]) 
+        line( b["points"]["x2"], b["points"]["y2"], b["points"]["x4"], b["points"]["y4"]) 
+        line( b["points"]["x3"], b["points"]["y3"], b["points"]["x4"], b["points"]["y4"]) 
+    end
 end
 
 __gfx__

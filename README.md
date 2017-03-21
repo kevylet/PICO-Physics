@@ -1,6 +1,7 @@
 # PICO-Physics
 
 // Initial implementation
+
 OBB Object Implementation - Quin
 - An object with:
   - cx
@@ -34,6 +35,7 @@ Draw All Boxes -Brandon
 - Loop through the world table, drawing lines between each of the boxes' points
 
 // Second implementation
+
 Improve collision to use SAT
  - Try to find axis between boxes
  - True if no axis, false if axis exists

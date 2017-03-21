@@ -71,13 +71,40 @@ function apply_gravity(b)
 end
 
 function collision(b1,b2)
-    if  b1["points"]["x1"] < b2["points"]["x2"] and 
-        b1["points"]["x2"] > b2["points"]["x1"] and
-        b1["points"]["y1"] < b2["points"]["y3"] and 
-        b1["points"]["y3"] > b2["points"]["y1"] then
-            return 1
+
+   if  b1["points"]["x1"] < b2["points"]["x2"] and 
+      b1["points"]["x2"] > b2["points"]["x1"] and
+      b1["points"]["y1"] < b2["points"]["y3"] and 
+      b1["points"]["y3"] > b2["points"]["y1"] then
+         return 1
+   else
+      local b1c = copy(b1)
+      local b2c = copy(b2)
+      
+      update_box(b1c)
+      update_box(b2c)
+      if b1c["points"]["x1"] < b2c["points"]["x2"] and 
+         b1c["points"]["x2"] > b2c["points"]["x1"] and
+         b1c["points"]["y1"] < b2c["points"]["y3"] and 
+         b1c["points"]["y3"] > b2c["points"]["y1"] then
+            return 500
+      end
+   end
+   return 0
+end
+
+		
+function copy(o)
+  local c
+  if type(o) == 'table' then
+    c = {}
+    for k, v in pairs(o) do
+      c[k] = copy(v)
     end
-    return 0
+  else
+    c = o
+  end
+  return c
 end
 
 function update_box(b)
@@ -94,12 +121,20 @@ end
 function update_boxes(bxs)
     for b1 in all(bxs) do    
         local flag = 0
+        local ob
         for b2 in all(bxs) do
             flag+=collision(b1,b2)
+            ob = b2
         end
         if flag <= 1 then
             apply_gravity(b1)
             update_box(b1)
+        elseif flag >= 500 then
+            b1["velocities"]["vy1"] = 1
+            b1["velocities"]["vy2"] = 1
+            b1["velocities"]["vy3"] = 1
+            b1["velocities"]["vy4"] = 1
+            flag = 1
         end
     end
 end
@@ -429,4 +464,3 @@ __music__
 00 41424344
 00 41424344
 00 41424344
-

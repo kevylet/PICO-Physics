@@ -113,7 +113,6 @@ function update_corners(b)
  local px
  local py
  if b.angle < 180 then
-  color(8)
   px = b.points.x1
   py = b.points.y1
   b.points.x1 = b.points.x2
@@ -141,8 +140,16 @@ function rotate_box(b,angle,cx,cy)
  end
 end
 
-function is_balanced(top_b,bot_b)
- 
+function resolve_balance(b1,b2)
+ if b1.points.cy > b2.points.cy then
+  if b1.points.cx < b2.points.x1 then
+   rotate_box(b1,30,b2.points.x1,b2.points.y1)
+  end
+ else
+  if b2.points.cx < b1.points.x1 then
+   rotate_box(b2,30,b1.points.x1,b1.points.y1)
+  end
+ end
 end
 
 function collision(b1,b2)

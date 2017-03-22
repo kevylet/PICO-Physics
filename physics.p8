@@ -55,45 +55,6 @@ function spawn_box(size, location, movable)
  add(boxes, new_box)
 end
 
-function spawn_box2(size, location, movable)
- local new_box = {}
- new_box["points"] = {}
- new_box["points"]["cx"] = location[1]
- new_box["points"]["cy"] = location[2]
- -- point 1
- new_box["points"]["x1"] = location[1] - (size[1] / 2)
- new_box["points"]["y1"] = location[2] - (size[2] / 2)
- -- point 2
- new_box["points"]["x2"] = location[1] + (size[1] / 2)
- new_box["points"]["y2"] = location[2] - (size[2] / 2)
- -- point 3
- new_box["points"]["x3"] = location[1] - (size[1] / 2)
- new_box["points"]["y3"] = location[2] + (size[2] / 2)
- -- point 4
- new_box["points"]["x4"] = location[1] + (size[1] / 2)
- new_box["points"]["y4"] = location[2] + (size[2] / 2)
-
- new_box["velocities"] = {}
- -- point 1
- new_box["velocities"]["vx1"] = 0
- new_box["velocities"]["vy1"] = 0
- -- point 2
- new_box["velocities"]["vx2"] = 0
- new_box["velocities"]["vy2"] = 0
- -- point 3
- new_box["velocities"]["vx3"] = 0
- new_box["velocities"]["vy3"] = 0
- -- point 4
- new_box["velocities"]["vx4"] = 0
- new_box["velocities"]["vy4"] = 0
-
- new_box["movable"] = movable
-
- new_box.angle = 0
-
- return new_box
-end
-
 function delete_first_box()
  local new_boxes = {}
  for b in all(boxes) do
@@ -148,10 +109,6 @@ function rotate_point(cx,cy,angle,ox,oy)
  return x, y
 end
 
-function swap_points(x1,y1,x2,y2)
- return x2, y2, x1, y1
-end
-
 function update_corners(b)
  local px
  local py
@@ -185,7 +142,7 @@ function rotate_box(b,angle,cx,cy)
 end
 
 function is_balanced(top_b,bot_b)
- -- if top_b
+ 
 end
 
 function collision(b1,b2)

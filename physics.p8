@@ -55,6 +55,45 @@ function spawn_box(size, location, movable)
  add(boxes, new_box)
 end
 
+function spawn_box2(size, location, movable)
+ local new_box = {}
+ new_box["points"] = {}
+ new_box["points"]["cx"] = location[1]
+ new_box["points"]["cy"] = location[2]
+ -- point 1
+ new_box["points"]["x1"] = location[1] - (size[1] / 2)
+ new_box["points"]["y1"] = location[2] - (size[2] / 2)
+ -- point 2
+ new_box["points"]["x2"] = location[1] + (size[1] / 2)
+ new_box["points"]["y2"] = location[2] - (size[2] / 2)
+ -- point 3
+ new_box["points"]["x3"] = location[1] - (size[1] / 2)
+ new_box["points"]["y3"] = location[2] + (size[2] / 2)
+ -- point 4
+ new_box["points"]["x4"] = location[1] + (size[1] / 2)
+ new_box["points"]["y4"] = location[2] + (size[2] / 2)
+
+ new_box["velocities"] = {}
+ -- point 1
+ new_box["velocities"]["vx1"] = 0
+ new_box["velocities"]["vy1"] = 0
+ -- point 2
+ new_box["velocities"]["vx2"] = 0
+ new_box["velocities"]["vy2"] = 0
+ -- point 3
+ new_box["velocities"]["vx3"] = 0
+ new_box["velocities"]["vy3"] = 0
+ -- point 4
+ new_box["velocities"]["vx4"] = 0
+ new_box["velocities"]["vy4"] = 0
+
+ new_box["movable"] = movable
+
+ new_box.angle = 0
+
+ return new_box
+end
+
 function delete_first_box()
  local new_boxes = {}
  for b in all(boxes) do
@@ -106,19 +145,47 @@ function rotate_point(cx,cy,angle,ox,oy)
 
  x = x_new + cx
  y = y_new + cy
- return {x, y}
+ return x, y
+end
+
+function swap_points(x1,y1,x2,y2)
+ return x2, y2, x1, y1
+end
+
+function update_corners(b)
+ local px
+ local py
+ if b.angle < 180 then
+  color(8)
+  px = b.points.x1
+  py = b.points.y1
+  b.points.x1 = b.points.x2
+  b.points.y1 = b.points.y2
+  b.points.x2 = b.points.x4
+  b.points.y2 = b.points.y4
+  b.points.x4 = b.points.x3
+  b.points.y4 = b.points.y3
+  b.points.x3 = px
+  b.points.y3 = py
+ end
+ b.angle %= 90
+ return b
 end
 
 function rotate_box(b,angle,cx,cy)
- b.points.x1 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x1, b.points.y1)[1]
- b.points.y1 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x1, b.points.y1)[2]
- b.points.x2 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x2, b.points.y2)[1]
- b.points.y2 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x2, b.points.y2)[2]
- b.points.x3 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x3, b.points.y3)[1]
- b.points.y3 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x3, b.points.y3)[2]
- b.points.x4 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x4, b.points.y4)[1]
- b.points.y4 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x4, b.points.y4)[2]
+ b.points.x1, b.points.y1 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x1, b.points.y1)
+ b.points.x2, b.points.y2 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x2, b.points.y2)
+ b.points.x3, b.points.y3 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x3, b.points.y3)
+ b.points.x4, b.points.y4 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x4, b.points.y4)
+ 
  b.angle = (b.angle + angle) % 360
+ if b.angle >= 90 then
+  b = update_corners(b)
+ end
+end
+
+function is_balanced(top_b,bot_b)
+ -- if top_b
 end
 
 function collision(b1,b2)
@@ -158,14 +225,16 @@ end
 
 function update_box(b)
    if b.movable == true then
-    b.points.x1 += b.velocities.vx1
-    b.points.y1 += b.velocities.vy1
-    b.points.x2 += b.velocities.vx2
-    b.points.y2 += b.velocities.vy2
-    b.points.x3 += b.velocities.vx3
-    b.points.y3 += b.velocities.vy3
-    b.points.x4 += b.velocities.vx4
-    b.points.y4 += b.velocities.vy4
+ b.points.x1 += b.velocities.vx1
+ b.points.y1 += b.velocities.vy1
+ b.points.x2 += b.velocities.vx2
+ b.points.y2 += b.velocities.vy2
+ b.points.x3 += b.velocities.vx3
+ b.points.y3 += b.velocities.vy3
+ b.points.x4 += b.velocities.vx4
+ b.points.y4 += b.velocities.vy4
+ b.points.cx += b.velocities.vx1
+ b.points.cy += b.velocities.vy1
    end
 end
 
@@ -208,11 +277,12 @@ function draw_boxes(bxs)
 end
 
 function _init()
+ color(0)
  last_x = 0
  last_y = 0
  poke(0x5f2d, 1) -- enable mouse
  spawn_box({127,10},{64,122}, false) -- ground box needs to be first so it isn't deleted
- spawn_box({20,12},{50,16}, true)
+ spawn_box({12,12},{50,16}, true)
  spawn_box({12,12},{70,20}, true)
  spawn_box({12,12},{20,20}, true)
 end
@@ -226,14 +296,25 @@ function _update()
    delete_first_box()
   end
  end
+ if btnp(0) then
+  rotate_box(boxes[2],30,boxes[2].points.cx,boxes[2].points.cy)
+ end
+ if btnp(1) then
+  rotate_box(boxes[2],30,boxes[2].points.cx,boxes[2].points.cy)
+ end
  update_boxes(boxes)
 end
 
 function _draw()
  cls(7)
- color(0)
+ 
  print(stat(1))
  print("ground",50,120)
+ print(boxes[2].angle, 50,50)
+ print(boxes[2].points.y1, 50,56)
+ print(boxes[2].points.y2, 80,56)
+ print(boxes[2].points.y3, 50,64)
+ print(boxes[2].points.y4, 80,64)
  draw_boxes(boxes)
  line(stat(32),stat(33),stat(32),stat(33),0)
 end

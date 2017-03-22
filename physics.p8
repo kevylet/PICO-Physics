@@ -8,7 +8,7 @@ boxes = {}
 gravity = .5 -- how quickly the box accelerates due to gravity
 terminal_v = 3 -- the maximum falling speed of a box (maybe change with size or mass?)
 skin_r = 2
-max_boxes = 10
+max_boxes = 50
 
 --   p1-------p2
 --    |       |
@@ -51,6 +51,7 @@ function spawn_box(size, location, movable)
  new_box["movable"] = movable
 
  new_box.angle = 0
+ new_box.resolving = false
 
  add(boxes, new_box)
 end
@@ -141,35 +142,52 @@ function rotate_box(b,angle,cx,cy)
 end
 
 function resolve_balance(b1,b2)
- if b1.points.cy > b2.points.cy then
-  if b1.points.cx < b2.points.x1 then
-   rotate_box(b1,30,b2.points.x1,b2.points.y1)
-  end
- else
-  if b2.points.cx < b1.points.x1 then
-   rotate_box(b2,30,b1.points.x1,b1.points.y1)
+ if b1 ~= boxes[1] and b2 ~=boxes[1] then
+  if b1.points.cy > b2.points.cy then
+   if b2.points.cx < b1.points.x1 + skin_r then
+    rotate_box(b2,30,b1.points.x1 + skin_r,b1.points.y1 + skin_r)
+    b2.points.x1 -= (b2.points.x4 + skin_r - b1.points.x1 + skin_r) / 3
+    b2.points.x2 -= (b2.points.x4 + skin_r - b1.points.x1 + skin_r) / 3
+    b2.points.x3 -= (b2.points.x4 + skin_r - b1.points.x1 + skin_r) / 3
+    b2.points.x4 -= (b2.points.x4 + skin_r - b1.points.x1 + skin_r) / 3
+    b2.resolving = true
+   end
+  -- else
+   -- if b2.points.cx < b1.points.x1 then
+    -- rotate_box(b2,30,b1.points.x1,b1.points.y1)
+   -- end
   end
  end
 end
 
 function collision(b1,b2)
+ if b2.resolving then
+  resolve_balance(b1,b2)
+  b2.resolving = false
+ end
+
  if  b1["points"]["x1"]          < b2["points"]["x2"] + skin_r and 
      b1["points"]["x2"] + skin_r > b2["points"]["x1"]          and
      b1["points"]["y1"]          < b2["points"]["y3"] + skin_r and 
      b1["points"]["y3"] + skin_r > b2["points"]["y1"]          then
-  return 1
- else
-  local b1c = copy(b1)
-  local b2c = copy(b2)
   
-  update_box(b1c)
-  update_box(b2c)
-  if b1c["points"]["x1"]          < b2c["points"]["x2"] + skin_r and 
-     b1c["points"]["x2"] + skin_r > b2c["points"]["x1"]          and
-     b1c["points"]["y1"]          < b2c["points"]["y3"] + skin_r and 
-     b1c["points"]["y3"] + skin_r > b2c["points"]["y1"]          then
-   return 500
+  resolve_balance(b1,b2)
+  if b2 == boxes[1] and b1 ~= boxes[1] and b1.angle ~= 0 then
+   rotate_box(b1,30,b1.points.cx,b1.points.cy)
   end
+ return 1
+ -- else
+  -- local b1c = copy(b1)
+  -- local b2c = copy(b2)
+  -- 
+  -- update_box(b1c)
+  -- update_box(b2c)
+  -- if b1c["points"]["x1"]          < b2c["points"]["x2"] + skin_r and 
+     -- b1c["points"]["x2"] + skin_r > b2c["points"]["x1"]          and
+     -- b1c["points"]["y1"]          < b2c["points"]["y3"] + skin_r and 
+     -- b1c["points"]["y3"] + skin_r > b2c["points"]["y1"]          then
+   -- return 500
+  -- end
  end
  return 0
 end
@@ -245,10 +263,15 @@ function _init()
  last_x = 0
  last_y = 0
  poke(0x5f2d, 1) -- enable mouse
- spawn_box({127,10},{64,122}, false) -- ground box needs to be first so it isn't deleted
- spawn_box({12,12},{50,16}, true)
- spawn_box({12,12},{70,20}, true)
- spawn_box({12,12},{20,20}, true)
+ spawn_box({136,20},{64,132}, false) -- ground box needs to be first so it isn't deleted
+ for j=0,6,1 do
+  for i=0,6 do
+   spawn_box({12,12},{(i*15+j*4)+8,(j*40)-128}, true)
+  end
+ end
+ 
+
+
 end
 
 function _update()
@@ -272,13 +295,13 @@ end
 function _draw()
  cls(7)
  
- print(stat(1))
- print("ground",50,120)
- print(boxes[2].angle, 50,50)
- print(boxes[2].points.y1, 50,56)
- print(boxes[2].points.y2, 80,56)
- print(boxes[2].points.y3, 50,64)
- print(boxes[2].points.y4, 80,64)
+ print(stat(1),2,2)
+ -- print("ground",50,120)
+ -- print(boxes[2].angle, 50,50)
+ -- print(boxes[2].points.y1, 50,56)
+ -- print(boxes[2].points.y2, 80,56)
+ -- print(boxes[2].points.y3, 50,64)
+ -- print(boxes[2].points.y4, 80,64)
  draw_boxes(boxes)
  line(stat(32),stat(33),stat(32),stat(33),0)
 end

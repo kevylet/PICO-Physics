@@ -7,7 +7,8 @@ __lua__
 boxes = {}
 gravity = .5 -- how quickly the box accelerates due to gravity
 terminal_v = 3 -- the maximum falling speed of a box (maybe change with size or mass?)
-skin_r = 1
+skin_r = 2
+max_boxes = 10
 
 --   p1-------p2
 --    |       |
@@ -52,6 +53,16 @@ function spawn_box(size, location, movable)
  new_box.angle = 0
 
  add(boxes, new_box)
+end
+
+function delete_first_box()
+ local new_boxes = {}
+ for b in all(boxes) do
+  if b ~= boxes[2] then
+   add(new_boxes, b)
+  end
+ end
+ boxes = new_boxes
 end
 
 function ease(i,g,s)
@@ -187,13 +198,24 @@ function draw_boxes(bxs)
 end
 
 function _init()
+ last_x = 0
+ last_y = 0
+ poke(0x5f2d, 1) -- enable mouse
+ spawn_box({127,10},{64,122}, false) -- ground box needs to be first so it isn't deleted
  spawn_box({20,12},{50,16}, true)
  spawn_box({12,12},{70,20}, true)
  spawn_box({12,12},{20,20}, true)
- spawn_box({127,10},{64,122}, false)
 end
 
 function _update()
+ if stat(34) == 1 and stat(32) ~= last_x and stat(33) ~= last_y then
+  spawn_box({12,12}, {stat(32),stat(33)}, true)
+  last_x = stat(32)
+  last_y = stat(33)
+  if boxes[max_boxes+1] ~= nil then
+   delete_first_box()
+  end
+ end
  update_boxes(boxes)
 end
 
@@ -203,6 +225,7 @@ function _draw()
  print(stat(1))
  print("ground",50,120)
  draw_boxes(boxes)
+ line(stat(32),stat(33),stat(32),stat(33),0)
 end
 
 __gfx__

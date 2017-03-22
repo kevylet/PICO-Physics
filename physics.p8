@@ -5,167 +5,204 @@ __lua__
 --
 
 boxes = {}
-gravity = .2 -- how quickly the box accelerates due to gravity
-terminal_v = 5 -- the maximum falling speed of a box (maybe change with size or mass?)
+gravity = .5 -- how quickly the box accelerates due to gravity
+terminal_v = 3 -- the maximum falling speed of a box (maybe change with size or mass?)
+skin_r = 1
 
---   p1----p2
---    |    |
---    |    |
---   p3----p4
+--   p1-------p2
+--    |       |
+--    |   +   |
+--    |  c    |
+--   p3-------p4
 
 function spawn_box(size, location, movable)
-	local new_box = {}
-	new_box["points"] = {}
-	
-    -- point 1
-    new_box["points"]["x1"] = location[1] - (size[1] / 2)
-    new_box["points"]["y1"] = location[2] - (size[2] / 2)
-	-- point 2
-    new_box["points"]["x2"] = location[1] + (size[1] / 2)
-    new_box["points"]["y2"] = location[2] - (size[2] / 2)
-	-- point 3
-    new_box["points"]["x3"] = location[1] - (size[1] / 2)
-    new_box["points"]["y3"] = location[2] + (size[2] / 2)
-	-- point 4
-    new_box["points"]["x4"] = location[1] + (size[1] / 2)
-    new_box["points"]["y4"] = location[2] + (size[2] / 2)
+ local new_box = {}
+ new_box["points"] = {}
+ new_box["points"]["cx"] = location[1]
+ new_box["points"]["cy"] = location[2]
+ -- point 1
+ new_box["points"]["x1"] = location[1] - (size[1] / 2)
+ new_box["points"]["y1"] = location[2] - (size[2] / 2)
+ -- point 2
+ new_box["points"]["x2"] = location[1] + (size[1] / 2)
+ new_box["points"]["y2"] = location[2] - (size[2] / 2)
+ -- point 3
+ new_box["points"]["x3"] = location[1] - (size[1] / 2)
+ new_box["points"]["y3"] = location[2] + (size[2] / 2)
+ -- point 4
+ new_box["points"]["x4"] = location[1] + (size[1] / 2)
+ new_box["points"]["y4"] = location[2] + (size[2] / 2)
 
-	new_box["velocities"] = {}
-	new_box["velocities"]["vx1"] = 0
-    new_box["velocities"]["vy1"] = 0
-	new_box["velocities"]["vx2"] = 0
-    new_box["velocities"]["vy2"] = 0
-	new_box["velocities"]["vx3"] = 0
-    new_box["velocities"]["vy3"] = 0
-	new_box["velocities"]["vx4"] = 0
-    new_box["velocities"]["vy4"] = 0
+ new_box["velocities"] = {}
+ -- point 1
+ new_box["velocities"]["vx1"] = 0
+ new_box["velocities"]["vy1"] = 0
+ -- point 2
+ new_box["velocities"]["vx2"] = 0
+ new_box["velocities"]["vy2"] = 0
+ -- point 3
+ new_box["velocities"]["vx3"] = 0
+ new_box["velocities"]["vy3"] = 0
+ -- point 4
+ new_box["velocities"]["vx4"] = 0
+ new_box["velocities"]["vy4"] = 0
 
-	new_box["movable"] = movable
+ new_box["movable"] = movable
 
-	add(boxes, new_box)
+ new_box.angle = 0
+
+ add(boxes, new_box)
 end
 
-function ease(v)
-    local increased = v
-    if v < terminal_v then
-        v += gravity
-        return v
-    else
-        v = terminal_v
-        return v
-    end
+function ease(i,g,s)
+-- i: initial value
+-- g: goal value
+-- s: step size
+ if i < g then
+  i += s
+  return i
+ else
+  i = g
+  return i
+ end
 end
 
 function apply_gravity(b)
-    if b["movable"]==true then 
-        b.velocities.vy1 = ease(b.velocities.vy1)
-        b.velocities.vy2 = ease(b.velocities.vy2)
-        b.velocities.vy3 = ease(b.velocities.vy3)
-        b.velocities.vy4 = ease(b.velocities.vy4)
-    else
-        b.velocities.vy1 = 0
-        b.velocities.vy2 = 0
-        b.velocities.vy3 = 0
-        b.velocities.vy4 = 0
-    end
+ if b.movable == true then 
+  b.velocities.vy1 = ease(b.velocities.vy1,terminal_v,gravity)
+  b.velocities.vy2 = ease(b.velocities.vy2,terminal_v,gravity)
+  b.velocities.vy3 = ease(b.velocities.vy3,terminal_v,gravity)
+  b.velocities.vy4 = ease(b.velocities.vy4,terminal_v,gravity)
+ else
+  b.velocities.vy1 = 0
+  b.velocities.vy2 = 0
+  b.velocities.vy3 = 0
+  b.velocities.vy4 = 0
+ end
+end
+
+function rotate_point(cx,cy,angle,ox,oy)
+ local a = (angle % 360) + 360
+
+ local s = sin(angle / 360)
+ local c = cos(angle / 360)
+
+ local x = ox - cx
+ local y = oy - cy
+
+ local x_new = x * c - y * s
+ local y_new = x * s + y * c
+
+ x = x_new + cx
+ y = y_new + cy
+ return {x, y}
+end
+
+function rotate_box(b,angle,cx,cy)
+ b.points.x1 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x1, b.points.y1)[1]
+ b.points.y1 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x1, b.points.y1)[2]
+ b.points.x2 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x2, b.points.y2)[1]
+ b.points.y2 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x2, b.points.y2)[2]
+ b.points.x3 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x3, b.points.y3)[1]
+ b.points.y3 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x3, b.points.y3)[2]
+ b.points.x4 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x4, b.points.y4)[1]
+ b.points.y4 = rotate_point(b.points.cx, b.points.cy, angle, b.points.x4, b.points.y4)[2]
+ b.angle = (b.angle + angle) % 360
 end
 
 function collision(b1,b2)
-
-   if  b1["points"]["x1"] < b2["points"]["x2"] and 
-      b1["points"]["x2"] > b2["points"]["x1"] and
-      b1["points"]["y1"] < b2["points"]["y3"] and 
-      b1["points"]["y3"] > b2["points"]["y1"] then
-         return 1
-   else
-      local b1c = copy(b1)
-      local b2c = copy(b2)
-      
-      update_box(b1c)
-      update_box(b2c)
-      if b1c["points"]["x1"] < b2c["points"]["x2"] and 
-         b1c["points"]["x2"] > b2c["points"]["x1"] and
-         b1c["points"]["y1"] < b2c["points"]["y3"] and 
-         b1c["points"]["y3"] > b2c["points"]["y1"] then
-            return 500
-      end
-   end
-   return 0
+ if  b1["points"]["x1"]          < b2["points"]["x2"] + skin_r and 
+     b1["points"]["x2"] + skin_r > b2["points"]["x1"]          and
+     b1["points"]["y1"]          < b2["points"]["y3"] + skin_r and 
+     b1["points"]["y3"] + skin_r > b2["points"]["y1"]          then
+  return 1
+ else
+  local b1c = copy(b1)
+  local b2c = copy(b2)
+  
+  update_box(b1c)
+  update_box(b2c)
+  if b1c["points"]["x1"]          < b2c["points"]["x2"] + skin_r and 
+     b1c["points"]["x2"] + skin_r > b2c["points"]["x1"]          and
+     b1c["points"]["y1"]          < b2c["points"]["y3"] + skin_r and 
+     b1c["points"]["y3"] + skin_r > b2c["points"]["y1"]          then
+   return 500
+  end
+ end
+ return 0
 end
-
 		
 function copy(o)
-  local c
-  if type(o) == 'table' then
-    c = {}
-    for k, v in pairs(o) do
-      c[k] = copy(v)
-    end
-  else
-    c = o
+ local c
+ if type(o) == 'table' then
+  c = {}
+  for k, v in pairs(o) do
+    c[k] = copy(v)
   end
-  return c
+ else
+  c = o
+ end
+ return c
 end
 
 function update_box(b)
-    b.points.x1 += b.velocities.vx1
-    b.points.y1 += b.velocities.vy1
-    b.points.x2 += b.velocities.vx2
-    b.points.y2 += b.velocities.vy2
-    b.points.x3 += b.velocities.vx3
-    b.points.y3 += b.velocities.vy3
-    b.points.x4 += b.velocities.vx4
-    b.points.y4 += b.velocities.vy4
+ b.points.x1 += b.velocities.vx1
+ b.points.y1 += b.velocities.vy1
+ b.points.x2 += b.velocities.vx2
+ b.points.y2 += b.velocities.vy2
+ b.points.x3 += b.velocities.vx3
+ b.points.y3 += b.velocities.vy3
+ b.points.x4 += b.velocities.vx4
+ b.points.y4 += b.velocities.vy4
 end
 
 function update_boxes(bxs)
-    for b1 in all(bxs) do    
-        local flag = 0
-        local ob
-        for b2 in all(bxs) do
-            flag+=collision(b1,b2)
-            ob = b2
-        end
-        if flag <= 1 then
-            apply_gravity(b1)
-            update_box(b1)
-        elseif flag >= 500 then
-            b1["velocities"]["vy1"] = 1
-            b1["velocities"]["vy2"] = 1
-            b1["velocities"]["vy3"] = 1
-            b1["velocities"]["vy4"] = 1
-            flag = 1
-        end
-    end
+ for b1 in all(bxs) do    
+  local flag = 0
+  local ob
+  for b2 in all(bxs) do
+   flag+=collision(b1,b2)
+   ob = b2
+  end
+  if flag <= 1 then
+   apply_gravity(b1)
+   update_box(b1)
+  elseif flag >= 500 then
+   b1["velocities"]["vy1"] = 1
+   b1["velocities"]["vy2"] = 1
+   b1["velocities"]["vy3"] = 1
+   b1["velocities"]["vy4"] = 1
+   flag = 1
+  end
+ end
+end
+
+function draw_boxes(bxs)
+ for b in all(bxs) do     
+  line( b["points"]["x1"], b["points"]["y1"], b["points"]["x2"], b["points"]["y2"])
+  line( b["points"]["x1"], b["points"]["y1"], b["points"]["x3"], b["points"]["y3"]) 
+  line( b["points"]["x2"], b["points"]["y2"], b["points"]["x4"], b["points"]["y4"]) 
+  line( b["points"]["x3"], b["points"]["y3"], b["points"]["x4"], b["points"]["y4"]) 
+ end
 end
 
 function _init()
-    spawn_box({12,12},{50,16}, true)
-    spawn_box({12,12},{70,20}, true)
-    spawn_box({12,12},{20,20}, true)
-    spawn_box({127,10},{64,122}, false)
+ spawn_box({20,12},{50,16}, true)
+ spawn_box({12,12},{70,20}, true)
+ spawn_box({12,12},{20,20}, true)
+ spawn_box({127,10},{64,122}, false)
 end
 
 function _update()
-    update_boxes(boxes)
+ update_boxes(boxes)
 end
 
 function _draw()
-    cls()
-    -- set color to red
-    color(8)
-    print(boxes[1].velocities.vy1)
-    print("ground",50,120)
-    
-    for b in all(boxes) do     
-        -- rect representation 
-        --rect( b["points"]["x1"], b["points"]["y1"],  b["points"]["x3"],b["points"]["y3"], 4)
-          
-        line( b["points"]["x1"], b["points"]["y1"], b["points"]["x2"], b["points"]["y2"])
-        line( b["points"]["x1"], b["points"]["y1"], b["points"]["x3"], b["points"]["y3"]) 
-        line( b["points"]["x2"], b["points"]["y2"], b["points"]["x4"], b["points"]["y4"]) 
-        line( b["points"]["x3"], b["points"]["y3"], b["points"]["x4"], b["points"]["y4"]) 
-    end
+ cls(7)
+ color(0)
+ print(stat(1))
+ print("ground",50,120)
+ draw_boxes(boxes)
 end
 
 __gfx__

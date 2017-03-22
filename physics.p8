@@ -157,14 +157,16 @@ function copy(o)
 end
 
 function update_box(b)
- b.points.x1 += b.velocities.vx1
- b.points.y1 += b.velocities.vy1
- b.points.x2 += b.velocities.vx2
- b.points.y2 += b.velocities.vy2
- b.points.x3 += b.velocities.vx3
- b.points.y3 += b.velocities.vy3
- b.points.x4 += b.velocities.vx4
- b.points.y4 += b.velocities.vy4
+   if b.movable == true then
+    b.points.x1 += b.velocities.vx1
+    b.points.y1 += b.velocities.vy1
+    b.points.x2 += b.velocities.vx2
+    b.points.y2 += b.velocities.vy2
+    b.points.x3 += b.velocities.vx3
+    b.points.y3 += b.velocities.vy3
+    b.points.x4 += b.velocities.vx4
+    b.points.y4 += b.velocities.vy4
+   end
 end
 
 function update_boxes(bxs)
@@ -176,13 +178,17 @@ function update_boxes(bxs)
    ob = b2
   end
   if flag <= 1 then
-   apply_gravity(b1)
    update_box(b1)
+   apply_gravity(b1)
   elseif flag >= 500 then
-   b1["velocities"]["vy1"] = 1
-   b1["velocities"]["vy2"] = 1
-   b1["velocities"]["vy3"] = 1
-   b1["velocities"]["vy4"] = 1
+   --b1["velocities"]["vx1"] = -1
+   --b1["velocities"]["vx2"] = 1
+   --b1["velocities"]["vx3"] = -1
+   --b1["velocities"]["vx4"] = 1
+   b1["velocities"]["vy1"] = 1.5
+   b1["velocities"]["vy2"] = 1.5
+   b1["velocities"]["vy3"] = 1.5
+   b1["velocities"]["vy4"] = 1.5
    flag = 1
   end
  end
@@ -193,7 +199,11 @@ function draw_boxes(bxs)
   line( b["points"]["x1"], b["points"]["y1"], b["points"]["x2"], b["points"]["y2"])
   line( b["points"]["x1"], b["points"]["y1"], b["points"]["x3"], b["points"]["y3"]) 
   line( b["points"]["x2"], b["points"]["y2"], b["points"]["x4"], b["points"]["y4"]) 
-  line( b["points"]["x3"], b["points"]["y3"], b["points"]["x4"], b["points"]["y4"]) 
+  line( b["points"]["x3"], b["points"]["y3"], b["points"]["x4"], b["points"]["y4"])
+  if b.movable == false then
+   line( b["points"]["x1"], b["points"]["y1"] - 2, b["points"]["x2"], b["points"]["y2"] - 2)
+   line( b["points"]["x1"], b["points"]["y1"] - 1, b["points"]["x2"], b["points"]["y2"] - 1)
+  end
  end
 end
 
